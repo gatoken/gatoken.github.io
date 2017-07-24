@@ -9,19 +9,21 @@ function decodeStats(response, price) {
     var weiPerEther = new BigNumber("1000000000000000000", 10);
 
     var totalContributionExact = new BigNumber(result.substr(2, 64), 16).div(weiPerEther);
-    var totalContributionUSDExact = totalContributionExact.times(new BigNumber(price));
+    var totalContributionUSDExact = totalContributionExact.times(new BigNumber(price));	
+    var totalContributionEURExact = totalContributionExact.times(new BigNumber(price * 0.86));
 
     return {
         totalContribution: totalContributionExact.round(3, BigNumber.ROUND_DOWN),
         totalContributionUSD: totalContributionUSDExact.round(0, BigNumber.ROUND_DOWN),
-        totalSupply: new BigNumber(result.substr(66, 64), 16).div(weiPerEther).round(3, BigNumber.ROUND_DOWN),
-        totalBonusTokensIssued: new BigNumber(result.substr(130, 64), 16).div(weiPerEther).round(3, BigNumber.ROUND_DOWN),
+        totalContributionEUR: totalContributionEURExact.round(0, BigNumber.ROUND_DOWN),
+        totalSupply: new BigNumber(result.substr(66, 64), 16).round(0, BigNumber.ROUND_DOWN),
+        totalBonusTokensIssued: new BigNumber(result.substr(130, 64), 16).round(0, BigNumber.ROUND_DOWN),
         purchasingAllowed: new BigNumber(result.substr(194, 64), 16).isZero() == false
     };
 }
 
 function getStats(price) {
-    var url = "https://api.etherscan.io/api?module=proxy&action=eth_call&to=xxx&data=0xc59d48470000000000000000000000000000000000000000000000000000000000000000&tag=latest";
+    var url = "https://api.etherscan.io/api?module=proxy&action=eth_call&to=0x6cDB9686fe637F8262A20b03089198F0240e785f&data=0xc59d48470000000000000000000000000000000000000000000000000000000000000000&tag=latest";
     return $.ajax(url, {
         cache: false,
         dataType: "json"
@@ -45,7 +47,6 @@ function getPrice() {
 function updatePage(stats) {
     if (stats == null) return;
 
-
     $("#total-ether").text(stats.totalContribution.toFixed(3));
     if (stats.totalContribution.toNumber() <= 0) {
         $("#total-ether-message").text("Looks like everyone read the warnings so far.");
@@ -53,24 +54,24 @@ function updatePage(stats) {
         $("#total-ether-message").text("I had a feeling someone would be very happy with donations.");
     }
 
-    $("#total-usd").text("$" + stats.totalContributionUSD.toFixed(0));
-    if (stats.totalContributionUSD.toNumber() <= 0) {
-        $("#total-usd-message").text("No Ether yet, so no cash either.");
-    } else if (stats.totalContributionExact.toNumber() <= 10) {
-        $("#total-usd-message").text("Not enough to donate.");
-    } else if (stats.totalContributionExact.toNumber() <= 100) {
-        $("#total-usd-message").text("Enough to donate.");
+    $("#total-usd-eur").text("$" + stats.totalContributionUSD.toFixed(0) + "/" + "€" + stats.totalContributionEUR.toFixed(0));    
+    if (stats.totalContributionEUR.toNumber() <= 0) {
+        $("#total-usd-eur-message").text("No Ether yet, so no cash either.");
+    } else if (stats.totalContribution.toNumber() <= 10) {
+        $("#total-usd-eur-message").text("Not enough to donate.");
+    } else if (stats.totalContribution.toNumber() <= 100) {
+        $("#total-usd-eur-message").text("Enough to donate.");
     } else {
-        $("#total-usd-message").text("Enough to make a big donations!");
+        $("#total-usd-eur-message").text("Enough to make a big donations!");
     }
 
-    $("#total-tokens").text(stats.totalSupply.toFixed(3));
+    $("#total-tokens").text(stats.totalSupply.toFixed(0));
     if (stats.totalSupply <= 0) {
         $("#total-tokens-message").text("No give away tokens issued yet either.");
     } else if (stats.totalBonusTokensIssued.toNumber() <= 0) {
         $("#total-tokens-message").text("Look at all those give away tokens!");
     } else {
-        $("#total-tokens-message").text("Including " + stats.totalBonusTokensIssued.toFixed(3) + " bonus tokens!");
+        $("#total-tokens-message").text("Including " + stats.totalBonusTokensIssued.toFixed(0) + " bonus tokens!");
     }
 
     $("#stats").show();
